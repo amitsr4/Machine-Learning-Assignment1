@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.spatial import distance
-from nearest_neighbour1 import gensmallm, predictknn, learnknn
+from nearest_neighbour import gensmallm, predictknn, learnknn
 import matplotlib.pyplot as plt
 import random as rnd
 
@@ -16,21 +16,25 @@ test3 = data['test3']
 test4 = data['test4']
 test6 = data['test6']
 
-full_test_sample = [*test1, *test3, *test4, *test6]
-labels = [*np.repeat(1, len(test1)), *np.repeat(3, len(test3)), *np.repeat(4, len(test4)), *np.repeat(6, len(test6))]
-labels = np.reshape(np.asarray(labels, int), (len(labels), 1))
+testLen = len(test1)+len(test3)+len(test4)+len(test6)
+
+x_test, y_test = gensmallm([test1, test3, test4, test6], [1, 3, 4, 6], testLen)
 
 
-def apply_knn_on_samples(k, m):
+def apply_knn_on_samples(k, m, corrupted):
     errors = []
     for i in range(10):
         x_train, y_train = gensmallm([train1, train3, train4, train6], [1, 3, 4, 6], m)
+        if corrupted:
+            corrupt(y_train)
+            corrupt(y_test)
         classifier = learnknn(k, x_train, y_train)
-        pred = predictknn(classifier, full_test_sample)
-        error = np.mean(pred != labels)
+        pred = predictknn(classifier, x_test)
+        pred = pred.reshape(1,(len(pred)))
+        error = np.mean(pred != y_test)
         errors.append(error)
     errors = np.asarray(errors)
-    return np.min(errors), np.max(errors), np.mean(errors)
+    return np.mean(errors), np.max(errors), np.min(errors)
 
 
 def plot_errors(errors, x_axe):
@@ -43,46 +47,38 @@ def plot_errors(errors, x_axe):
     plt.show()
 
 
-def plot_min_max(min, max, x_axe):
-    plt.figure()
-    plt.bar([x - 0.5 for x in x_axe], min, label='min error for each sample size')
-    plt.bar([x + 0.5 for x in x_axe], max, label='max error for each sample size')
-    plt.xlabel('Sample size')
-    plt.ylabel('Average error')
-    plt.suptitle("Graph2: max and min errors")
-    plt.legend()
-    plt.show()
-
-
-def plot_bar_of_min_and_max(min, max, x_axe):
-    plt.figure()
-    plt.bar([x - 0.5 for x in x_axe], min, label='min error for each sample size')
-    # plt.bar([x-0.1 for x in x_axe], min, width=0.2, label='min error for each k')
-    plt.bar([x + 0.5 for x in x_axe], max, label='max error for each sample size')
-    # plt.bar([x+0.1 for x in x_axe], max, width=0.2, label='max error for each k')
-    plt.xlabel('k')
-    plt.xlabel('sample size')
-    # plt.ylabel('average error')
-    # plt.suptitle("graph4: max and min errors")
-    plt.suptitle("graph2: max and min errors")
-    plt.legend()
-    plt.show()
-
-
-# apply knn on different training sample sizes.
+# apply knn on different training sample sizes and then plot it.
 def task_a():
     min_errors = []
     max_errors = []
     average_errors = []
     sample_sizes = np.arange(10, 110, 10)
-    for i in sample_sizes:
-        min_err, max_err, avg_err = apply_knn_on_samples(1, i)
-        min_errors.append(min_errors)
-        max_errors.append(max_errors)
+
+    for size in sample_sizes:
+        print("iteration number", size)
+        avg_err, max_err, min_err = apply_knn_on_samples(1, size, False)
         average_errors.append(avg_err)
-    plot_errors(average_errors, sample_sizes)
-    # plot_min_max(min_errors, max_errors, sample_sizes)
-    plot_bar_of_min_and_max(min_errors, max_errors, sample_sizes)
+        min_errors.append(min_err)
+        max_errors.append(max_err)
+
+    plt.plot(sample_sizes, average_errors, color="blue")
+    plt.plot(sample_sizes, min_errors, color="green")
+    plt.plot(sample_sizes, max_errors, color="red")
+    sample_sizes = np.array(sample_sizes)
+    min_errors = np.array(min_errors)
+    max_errors = np.array(max_errors)
+    average_errors = np.array(average_errors)
+    plt.errorbar(sample_sizes,
+                 average_errors,
+                 [average_errors - min_errors, max_errors - average_errors],
+                 fmt='ok', lw=1,
+                 ecolor='tomato')
+
+    plt.title("Graph1: average test error as a function of the training sample size")
+    plt.legend(["Average test error", "Minimum Error", "Maximum Error"])
+    plt.xlabel("Sample size")
+    plt.ylabel("Average test error")
+    plt.show()
 
 
 def corrupt(y):
@@ -95,32 +91,36 @@ def corrupt(y):
 
 # apply knn on different K's .
 def task_e(corrupted):
-    meansError = np.array([])
-    for k in range(1, 12):
-        sumMeanI = 0
-        for i in range(10):
-            x_train, y_train = gensmallm([train1, train3, train4, train6], [1, 3, 4, 6], 200)
-            if corrupted:
-                corrupt(y_train)
-                corrupt(full_test_sample)
-            classifier = learnknn(k, x_train, y_train)
-            preds = predictknn(classifier, full_test_sample)
-            # preds = preds.reshape(testLen, )
-            sumMeanI += np.mean(labels != preds)
+    average_errors = []
+    min_errors = []
+    max_errors = []
+    k = list(range(1, 12))
+    for i in k:
+        print("TASK E for k : ", i)
+        avg_err, max_err, min_err = apply_knn_on_samples(i, 200, corrupted)
+        average_errors.append(avg_err)
+        min_errors.append(min_err)
+        max_errors.append(max_err)
 
-        meansError = np.append(meansError, [sumMeanI / 10.0])
+    # plot_errors(average_errors, k)
 
-    return meansError, np.arange(1, 12)
+    return average_errors, np.arange(1, 12)
 
 
 task_a()
-# task_e(False);
-# task_e(True);
 
-# meansErrorK, testSizeK = task_e(False)
-# plt.plot(testSizeK, meansErrorK, color="blue")
-# plt.legend(["Average test error"])
-# plt.title("Error over K")
-# plt.xlabel("K")
-# plt.ylabel("Average test error")
-# plt.show()
+meansErrorK, testSizeK = task_e(False)
+plt.plot(testSizeK, meansErrorK, color="blue")
+plt.legend(["Average test error"])
+plt.title("Graph 2 - Error over K")
+plt.xlabel("K")
+plt.ylabel("Average test error")
+plt.show()
+
+meansErrorK, testSizeK = task_e(True)
+plt.plot(testSizeK, meansErrorK, color="blue")
+plt.legend(["Average test error"])
+plt.title("Graph 3 - Error over *corrupted* K")
+plt.xlabel("K")
+plt.ylabel("Average test error")
+plt.show()

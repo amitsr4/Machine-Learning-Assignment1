@@ -2,27 +2,26 @@ import numpy as np
 from scipy.spatial import distance
 import numpy.linalg as la
 
+
 class Classifier:
     def __init__(self, X, y, k):
+        self.k = k
         self.X = X
         self.y = y
-        self.k = k
-
 
     def classify(self, x_to_classify):
         # caculates distances
         distances = []
         # for i in range(len(self.X)):
         #     distances.append([i, la.norm(self.X[i] - x_to_classify)])
+
         distances = np.array([(np.linalg.norm(self.X[i] - x_to_classify), self.y[i]) for i in range(len(self.X))])
-
-        distances = distances[distances[:, 0].argsort()]  # sort by the first column
-        topK = distances[:self.k]  # get only k first rows
-        topK = topK[:, 1]  # get the second column
+        distances = distances[distances[:, 0].argsort()]
+        topK = distances[:self.k]
+        topK = topK[:, 1]
         values, counts = np.unique(topK, return_counts=True)
-        ind = np.argmax(counts)  # together they bring the index of the most frequent value
-        return values[ind]
-
+        idx = np.argmax(counts)
+        return values[idx]
 
 
 def gensmallm(x_list: list, y_list: list, m: int):
@@ -73,9 +72,8 @@ def gensmallm(x_list: list, y_list: list, m: int):
 # return np.argmax(np.bincount(labels_of_k_closest))
 
 # return classifier
+
 def learnknn(k: int, x_train: np.array, y_train: np.array):
-
-
     return Classifier(x_train, y_train, k)
 
 
@@ -87,8 +85,9 @@ def predictknn(classifier, x_test: np.array):
     :return: numpy array of size (n, 1) classifying the examples in x_test
     """
     # return np.reshape(np.asarray([int(classifier(x)) for x in x_test]), (len(x_test), 1))
-    yPrediction = np.array([classifier.classify(x) for x in x_test])
-    return yPrediction.reshape((len(yPrediction), 1))
+    y_pred = np.array([classifier.classify(x) for x in x_test])
+    return y_pred.reshape((len(y_pred),1))
+
 
 def simple_test():
     data = np.load('mnist_all.npz')
