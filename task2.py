@@ -88,6 +88,16 @@ def corrupt(y):
         options.remove(y[i])
         y[i] = rnd.choice(options)
 
+def plot_bar_of_min_and_max(min, max, x_axe):
+    plt.figure()
+    plt.bar([x-0.1 for x in x_axe], min, width=0.2, label='min error for each k')
+    plt.bar([x+0.1 for x in x_axe], max, width=0.2, label='max error for each k')
+    plt.xlabel('K')
+    plt.ylabel('Average error')
+    plt.suptitle("graph 4: max and min errors")
+    plt.legend()
+    plt.show()
+
 
 # apply knn on different K's .
 def task_e(corrupted):
@@ -102,8 +112,7 @@ def task_e(corrupted):
         min_errors.append(min_err)
         max_errors.append(max_err)
 
-    # plot_errors(average_errors, k)
-
+    plot_bar_of_min_and_max(min_errors,max_errors,k)
     return average_errors, np.arange(1, 12)
 
 
