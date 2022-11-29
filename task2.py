@@ -116,7 +116,6 @@ def task_e(corrupted):
     return average_errors, np.arange(1, 12)
 
 
-task_a()
 
 meansErrorK, testSizeK = task_e(False)
 plt.plot(testSizeK, meansErrorK, color="blue")
